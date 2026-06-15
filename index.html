@@ -67,27 +67,37 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 .srow.win{border:2px solid var(--gold);}
 .grow{display:flex;justify-content:space-between;padding:8px 12px;background:var(--stone);border-radius:6px;font-size:14px;margin-bottom:6px;}
 .pickaxe-wrap{display:flex;flex-direction:column;align-items:center;}
-@keyframes pickSwing{
-  0%  {transform:rotate(-35deg) translate(0,0)}
-  45% {transform:rotate(25deg) translate(3px,3px)}
-  50% {transform:rotate(25deg) translate(3px,3px)}
-  95% {transform:rotate(-35deg) translate(0,0)}
-  100%{transform:rotate(-35deg) translate(0,0)}
+@keyframes gnomeSwing{
+  0%,100%{transform:rotate(-18deg)}
+  45%,55%{transform:rotate(22deg)}
 }
-@keyframes goldFlash{
-  0%,44%{opacity:0;transform:scale(0.5)}
-  50%,70%{opacity:1;transform:scale(1)}
-  85%,100%{opacity:0;transform:scale(0.5)}
+@keyframes gnomeBob{
+  0%,100%{transform:translateY(0)}
+  45%,55%{transform:translateY(3px)}
 }
-@keyframes rockChip{
-  0%,44%{opacity:0;transform:translate(0,0)}
-  50%{opacity:1;transform:translate(0,0)}
-  85%{opacity:0;transform:translate(4px,-6px)}
+@keyframes sparkPop{
+  0%,40%{opacity:0;transform:scale(0) translate(0,0)}
+  50%{opacity:1;transform:scale(1) translate(0,0)}
+  80%{opacity:0;transform:scale(.5) translate(6px,-8px)}
   100%{opacity:0}
 }
-.pick-anim{animation:pickSwing .75s cubic-bezier(.4,0,.2,1) infinite;transform-origin:75% 25%;image-rendering:pixelated;}
-.gold-spark{animation:goldFlash .75s ease-in-out infinite;image-rendering:pixelated;}
-.rock-chip{animation:rockChip .75s ease-in-out infinite;image-rendering:pixelated;}
+@keyframes chip1{
+  0%,40%{opacity:0;transform:translate(0,0)}
+  50%{opacity:1;transform:translate(0,0)}
+  90%{opacity:0;transform:translate(10px,-12px)}
+  100%{opacity:0}
+}
+@keyframes chip2{
+  0%,42%{opacity:0;transform:translate(0,0)}
+  52%{opacity:1;transform:translate(0,0)}
+  90%{opacity:0;transform:translate(8px,-6px)}
+  100%{opacity:0}
+}
+.gnome-body{animation:gnomeBob .8s ease-in-out infinite;image-rendering:pixelated;}
+.pick-arm{animation:gnomeSwing .8s ease-in-out infinite;transform-origin:20% 30%;image-rendering:pixelated;}
+.spark{animation:sparkPop .8s ease-in-out infinite;image-rendering:pixelated;}
+.chip1{animation:chip1 .8s ease-in-out infinite;image-rendering:pixelated;}
+.chip2{animation:chip2 .8s ease-in-out infinite;image-rendering:pixelated;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--stone-mid);border:1px solid var(--stone-light);border-radius:8px;padding:10px 20px;font-size:14px;z-index:200;white-space:nowrap;animation:fio 2.5s forwards;pointer-events:none;}
 @keyframes fio{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%)}75%{opacity:1}100%{opacity:0}}
 </style>
@@ -141,55 +151,105 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 <!-- CONNECTING -->
 <div id="s-conn" class="screen center">
   <div class="pickaxe-wrap">
-    <svg width="120" height="120" viewBox="0 0 24 24" style="image-rendering:pixelated;overflow:visible;" xmlns="http://www.w3.org/2000/svg">
-      <!-- Static rock block at bottom right -->
-      <rect x="14" y="16" width="2" height="2" fill="#5a5048"/>
-      <rect x="16" y="16" width="2" height="2" fill="#4a4038"/>
-      <rect x="14" y="18" width="4" height="2" fill="#3d3530"/>
-      <rect x="16" y="14" width="2" height="2" fill="#6a6058"/>
-      <!-- Gold vein in rock -->
-      <rect x="16" y="16" width="1" height="1" fill="#8a6010"/>
-      <rect x="17" y="17" width="1" height="1" fill="#8a6010"/>
+    <!-- pixel scale: each "px" = 5 real px, canvas 40x36 logical = 200x180 display -->
+    <svg width="200" height="180" viewBox="0 0 40 36" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated;overflow:visible;">
 
-      <!-- Pickaxe (animated) -->
-      <g class="pick-anim">
-        <!-- Handle: diagonal from top-left to bottom-right -->
-        <rect x="10" y="12" width="2" height="2" fill="#6B3410"/>
-        <rect x="8"  y="10" width="2" height="2" fill="#7B4420"/>
-        <rect x="6"  y="8"  width="2" height="2" fill="#8B5430"/>
-        <rect x="4"  y="6"  width="2" height="2" fill="#8B5430"/>
-        <!-- Head: L-shaped pick -->
+      <!-- ══ WALL (static) ══ -->
+      <!-- Wall background -->
+      <rect x="26" y="4"  width="14" height="32" fill="#2a2520"/>
+      <!-- Stone bricks -->
+      <rect x="26" y="4"  width="13" height="5"  fill="#3d3530"/>
+      <rect x="27" y="5"  width="11" height="3"  fill="#4a4038"/>
+      <rect x="26" y="10" width="13" height="5"  fill="#3d3530"/>
+      <rect x="28" y="11" width="10" height="3"  fill="#4a4038"/>
+      <rect x="26" y="16" width="13" height="5"  fill="#3d3530"/>
+      <rect x="27" y="17" width="11" height="3"  fill="#4a4038"/>
+      <rect x="26" y="22" width="13" height="5"  fill="#3d3530"/>
+      <rect x="28" y="23" width="10" height="3"  fill="#4a4038"/>
+      <rect x="26" y="28" width="13" height="5"  fill="#3d3530"/>
+      <rect x="27" y="29" width="11" height="3"  fill="#4a4038"/>
+      <!-- Gold vein -->
+      <rect x="28" y="14" width="2"  height="1"  fill="#8a6010"/>
+      <rect x="29" y="15" width="3"  height="1"  fill="#a07015"/>
+      <rect x="28" y="16" width="2"  height="1"  fill="#8a6010"/>
+      <rect x="30" y="14" width="1"  height="3"  fill="#906510"/>
+      <!-- Wall edge shadow -->
+      <rect x="26" y="4"  width="1"  height="32" fill="#1a1510"/>
+
+      <!-- ══ GNOME BODY (bobs up/down) ══ -->
+      <g class="gnome-body">
+        <!-- Legs -->
+        <rect x="10" y="28" width="3" height="4" fill="#4a7a3a"/>
+        <rect x="14" y="28" width="3" height="4" fill="#4a7a3a"/>
+        <!-- Boots -->
+        <rect x="9"  y="31" width="4" height="2" fill="#3a2010"/>
+        <rect x="13" y="31" width="4" height="2" fill="#3a2010"/>
+        <!-- Body / tunic -->
+        <rect x="9"  y="20" width="9" height="9" fill="#5a8a4a"/>
+        <rect x="10" y="21" width="7" height="7" fill="#6a9a5a"/>
+        <!-- Belt -->
+        <rect x="9"  y="27" width="9" height="1" fill="#6B3410"/>
+        <rect x="12" y="27" width="3" height="2" fill="#8B4420"/>
+        <!-- Head -->
+        <rect x="10" y="13" width="8" height="7" fill="#e8c890"/>
+        <rect x="11" y="14" width="6" height="5" fill="#f0d8a0"/>
+        <!-- Eyes -->
+        <rect x="12" y="15" width="1" height="1" fill="#2a1a08"/>
+        <rect x="15" y="15" width="1" height="1" fill="#2a1a08"/>
+        <!-- Nose -->
+        <rect x="14" y="16" width="1" height="2" fill="#c8a070"/>
+        <!-- White beard -->
+        <rect x="10" y="18" width="8" height="2" fill="#e8e8e8"/>
+        <rect x="9"  y="19" width="10" height="2" fill="#f0f0f0"/>
+        <!-- Hat (red) -->
+        <rect x="10" y="9"  width="8" height="5" fill="#c03020"/>
+        <rect x="11" y="8"  width="6" height="2" fill="#c03020"/>
+        <rect x="13" y="7"  width="2" height="2" fill="#c03020"/>
+        <rect x="9"  y="13" width="10" height="1" fill="#a02010"/>
+        <!-- Hat highlight -->
+        <rect x="12" y="9"  width="2" height="1" fill="#d84030"/>
+      </g>
+
+      <!-- ══ ARM + PICKAXE (swings) ══ -->
+      <g class="pick-arm">
+        <!-- Upper arm -->
+        <rect x="18" y="21" width="3" height="3" fill="#6a9a5a"/>
+        <!-- Forearm -->
+        <rect x="20" y="23" width="3" height="3" fill="#e8c890"/>
+        <!-- Hand -->
+        <rect x="22" y="25" width="2" height="2" fill="#d8b880"/>
+        <!-- Pickaxe handle -->
+        <rect x="21" y="19" width="2" height="3" fill="#8B5430"/>
+        <rect x="22" y="16" width="2" height="4" fill="#7B4420"/>
+        <rect x="23" y="13" width="2" height="4" fill="#8B5430"/>
+        <!-- Pickaxe head -->
+        <rect x="22" y="11" width="5" height="3" fill="#b8b8b8"/>
+        <rect x="23" y="10" width="3" height="2" fill="#d0d0d0"/>
         <!-- Top spike -->
-        <rect x="2"  y="2"  width="2" height="2" fill="#d0d0d0"/>
-        <rect x="4"  y="3"  width="2" height="2" fill="#b8b8b8"/>
-        <rect x="2"  y="4"  width="2" height="2" fill="#c8c8c8"/>
-        <!-- Bottom spike (the digging end) -->
-        <rect x="4"  y="4"  width="2" height="2" fill="#c0c0c0"/>
-        <rect x="6"  y="5"  width="2" height="2" fill="#b0b0b0"/>
-        <rect x="8"  y="6"  width="2" height="2" fill="#a8a8a8"/>
-        <!-- Head body -->
-        <rect x="3"  y="3"  width="2" height="3" fill="#909090"/>
-        <!-- Shine -->
-        <rect x="2"  y="2"  width="1" height="1" fill="#f0f0f0"/>
-        <rect x="3"  y="2"  width="1" height="1" fill="#e0e0e0"/>
+        <rect x="24" y="9"  width="2" height="2" fill="#c0c0c0"/>
+        <rect x="25" y="8"  width="1" height="2" fill="#d8d8d8"/>
+        <!-- Bottom spike (hits wall) -->
+        <rect x="26" y="13" width="3" height="1" fill="#a8a8a8"/>
+        <rect x="27" y="12" width="2" height="2" fill="#c0c0c0"/>
+        <!-- Metal shine -->
+        <rect x="23" y="11" width="1" height="1" fill="#f0f0f0"/>
       </g>
 
-      <!-- Gold sparks on impact -->
-      <g class="gold-spark">
-        <rect x="14" y="13" width="2" height="2" fill="#f0c040"/>
-        <rect x="17" y="12" width="1" height="1" fill="#d4a017"/>
-        <rect x="13" y="15" width="1" height="1" fill="#f0c040"/>
-        <rect x="18" y="14" width="1" height="1" fill="#ffdd60"/>
-        <rect x="15" y="11" width="1" height="1" fill="#d4a017"/>
+      <!-- ══ IMPACT SPARKS ══ -->
+      <g class="spark">
+        <rect x="28" y="11" width="2" height="2" fill="#f0c040"/>
+        <rect x="30" y="10" width="1" height="1" fill="#ffdd60"/>
+        <rect x="27" y="9"  width="1" height="1" fill="#d4a017"/>
+        <rect x="31" y="12" width="2" height="1" fill="#f0c040"/>
+        <rect x="29" y="8"  width="1" height="1" fill="#ffee80"/>
       </g>
-      <!-- Rock chips flying -->
-      <g class="rock-chip">
-        <rect x="19" y="13" width="1" height="1" fill="#5a5048"/>
-        <rect x="21" y="11" width="1" height="1" fill="#4a4038"/>
-      </g>
+      <!-- Flying rock chips -->
+      <rect class="chip1" x="30" y="13" width="2" height="2" fill="#5a5048"/>
+      <rect class="chip2" x="32" y="11" width="1" height="1" fill="#4a4038"/>
+
     </svg>
   </div>
-  <div class="info" id="conn-msg" style="margin-top:4px;font-size:14px;">Подключаемся...</div>
+  <div class="info" id="conn-msg" style="margin-top:8px;font-size:15px;letter-spacing:1px;">Подключаемся...</div>
 </div>
 
 <!-- LOBBY -->
