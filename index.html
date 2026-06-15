@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Гномы-вредители</title>
 <style>
 :root{
@@ -11,7 +11,8 @@
   --text:#f0e8d8;--text-dim:#9a8878;--danger:#c0392b;--success:#27ae60;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--rock);color:var(--text);font-family:Georgia,serif;min-height:100dvh;overflow-x:hidden;}
+body{background:var(--rock);color:var(--text);font-family:Georgia,serif;min-height:100dvh;overflow-x:hidden;touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none;}
+html{touch-action:pan-x pan-y;}
 .screen{display:none;min-height:100dvh;padding:16px;flex-direction:column;}
 .screen.active{display:flex;}
 .center{align-items:center;justify-content:center;gap:18px;}
@@ -32,12 +33,12 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--success);flex-shrink:0;}
 .dot.g{background:var(--gold);}
 .info{font-size:13px;color:var(--text-dim);text-align:center;}
-#sg{padding:0;gap:0;}
+#sg{padding:0;gap:0;height:100dvh;max-height:100dvh;overflow:hidden;}
 .ghdr{background:var(--stone);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:2px solid var(--stone-mid);}
 .prow{background:var(--stone);padding:4px 8px;border-bottom:1px solid var(--stone-mid);display:flex;gap:6px;overflow-x:auto;flex-shrink:0;}
 .pchip{flex-shrink:0;background:var(--stone-mid);border-radius:20px;padding:3px 10px;font-size:11px;}
 .pchip.me{border:1px solid var(--gold);}
-.bwrap{flex:1;overflow:auto;}
+.bwrap{flex:1;overflow:auto;touch-action:pan-x pan-y;}
 .board{position:relative;}
 .cell{position:absolute;width:72px;height:100px;border:1px solid rgba(255,255,255,.04);cursor:pointer;}
 .cell.tgt{border-color:rgba(212,160,23,.7);background:rgba(212,160,23,.1);}
@@ -46,7 +47,7 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 .sab-row{display:flex;gap:6px;margin-bottom:6px;font-size:11px;color:var(--text-dim);align-items:center;flex-wrap:wrap;}
 .sab-chip{background:var(--stone-mid);border:1px solid var(--stone-light);border-radius:4px;padding:2px 6px;font-size:11px;}
 .sab-chip.br{border-color:var(--danger);color:var(--danger);}
-.hscroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;}
+.hscroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;touch-action:pan-x;}
 .hcard{flex-shrink:0;width:60px;height:84px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;overflow:hidden;}
 .hcard:hover{transform:translateY(-5px);}
 .hcard.sel{border-color:var(--gold);transform:translateY(-9px);}
@@ -65,12 +66,28 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 .srow{display:flex;justify-content:space-between;padding:10px 14px;background:var(--stone-mid);border-radius:6px;font-size:15px;margin-bottom:6px;}
 .srow.win{border:2px solid var(--gold);}
 .grow{display:flex;justify-content:space-between;padding:8px 12px;background:var(--stone);border-radius:6px;font-size:14px;margin-bottom:6px;}
-.pickaxe-wrap{display:flex;flex-direction:column;align-items:center;gap:0;}
-.pickaxe-canvas{image-rendering:pixelated;}
-@keyframes pickSwing{0%{transform:rotate(-30deg)}40%{transform:rotate(20deg)}50%{transform:rotate(20deg)}90%{transform:rotate(-30deg)}100%{transform:rotate(-30deg)}}
-@keyframes goldFlash{0%,60%{opacity:0}65%,75%{opacity:1}80%,100%{opacity:0}}
-.pick-anim{animation:pickSwing .7s ease-in-out infinite;transform-origin:80% 20%;}
-.gold-spark{animation:goldFlash .7s ease-in-out infinite;}
+.pickaxe-wrap{display:flex;flex-direction:column;align-items:center;}
+@keyframes pickSwing{
+  0%  {transform:rotate(-35deg) translate(0,0)}
+  45% {transform:rotate(25deg) translate(3px,3px)}
+  50% {transform:rotate(25deg) translate(3px,3px)}
+  95% {transform:rotate(-35deg) translate(0,0)}
+  100%{transform:rotate(-35deg) translate(0,0)}
+}
+@keyframes goldFlash{
+  0%,44%{opacity:0;transform:scale(0.5)}
+  50%,70%{opacity:1;transform:scale(1)}
+  85%,100%{opacity:0;transform:scale(0.5)}
+}
+@keyframes rockChip{
+  0%,44%{opacity:0;transform:translate(0,0)}
+  50%{opacity:1;transform:translate(0,0)}
+  85%{opacity:0;transform:translate(4px,-6px)}
+  100%{opacity:0}
+}
+.pick-anim{animation:pickSwing .75s cubic-bezier(.4,0,.2,1) infinite;transform-origin:75% 25%;image-rendering:pixelated;}
+.gold-spark{animation:goldFlash .75s ease-in-out infinite;image-rendering:pixelated;}
+.rock-chip{animation:rockChip .75s ease-in-out infinite;image-rendering:pixelated;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--stone-mid);border:1px solid var(--stone-light);border-radius:8px;padding:10px 20px;font-size:14px;z-index:200;white-space:nowrap;animation:fio 2.5s forwards;pointer-events:none;}
 @keyframes fio{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%)}75%{opacity:1}100%{opacity:0}}
 </style>
@@ -124,34 +141,55 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 <!-- CONNECTING -->
 <div id="s-conn" class="screen center">
   <div class="pickaxe-wrap">
-    <svg width="80" height="80" viewBox="0 0 16 16" style="image-rendering:pixelated;" xmlns="http://www.w3.org/2000/svg">
+    <svg width="120" height="120" viewBox="0 0 24 24" style="image-rendering:pixelated;overflow:visible;" xmlns="http://www.w3.org/2000/svg">
+      <!-- Static rock block at bottom right -->
+      <rect x="14" y="16" width="2" height="2" fill="#5a5048"/>
+      <rect x="16" y="16" width="2" height="2" fill="#4a4038"/>
+      <rect x="14" y="18" width="4" height="2" fill="#3d3530"/>
+      <rect x="16" y="14" width="2" height="2" fill="#6a6058"/>
+      <!-- Gold vein in rock -->
+      <rect x="16" y="16" width="1" height="1" fill="#8a6010"/>
+      <rect x="17" y="17" width="1" height="1" fill="#8a6010"/>
+
+      <!-- Pickaxe (animated) -->
       <g class="pick-anim">
-        <!-- Pickaxe head -->
-        <rect x="1" y="2" width="2" height="2" fill="#c0c0c0"/>
-        <rect x="3" y="1" width="2" height="2" fill="#c0c0c0"/>
-        <rect x="5" y="2" width="2" height="2" fill="#c0c0c0"/>
-        <rect x="3" y="3" width="2" height="2" fill="#a0a0a0"/>
-        <!-- Handle -->
-        <rect x="5" y="4" width="2" height="2" fill="#8B4513"/>
-        <rect x="7" y="6" width="2" height="2" fill="#8B4513"/>
-        <rect x="9" y="8" width="2" height="2" fill="#8B4513"/>
-        <rect x="11" y="10" width="2" height="2" fill="#6B3410"/>
-        <!-- Shine on head -->
-        <rect x="2" y="2" width="1" height="1" fill="#e8e8e8"/>
+        <!-- Handle: diagonal from top-left to bottom-right -->
+        <rect x="10" y="12" width="2" height="2" fill="#6B3410"/>
+        <rect x="8"  y="10" width="2" height="2" fill="#7B4420"/>
+        <rect x="6"  y="8"  width="2" height="2" fill="#8B5430"/>
+        <rect x="4"  y="6"  width="2" height="2" fill="#8B5430"/>
+        <!-- Head: L-shaped pick -->
+        <!-- Top spike -->
+        <rect x="2"  y="2"  width="2" height="2" fill="#d0d0d0"/>
+        <rect x="4"  y="3"  width="2" height="2" fill="#b8b8b8"/>
+        <rect x="2"  y="4"  width="2" height="2" fill="#c8c8c8"/>
+        <!-- Bottom spike (the digging end) -->
+        <rect x="4"  y="4"  width="2" height="2" fill="#c0c0c0"/>
+        <rect x="6"  y="5"  width="2" height="2" fill="#b0b0b0"/>
+        <rect x="8"  y="6"  width="2" height="2" fill="#a8a8a8"/>
+        <!-- Head body -->
+        <rect x="3"  y="3"  width="2" height="3" fill="#909090"/>
+        <!-- Shine -->
+        <rect x="2"  y="2"  width="1" height="1" fill="#f0f0f0"/>
+        <rect x="3"  y="2"  width="1" height="1" fill="#e0e0e0"/>
       </g>
-      <!-- Gold pixels that flash on impact -->
+
+      <!-- Gold sparks on impact -->
       <g class="gold-spark">
-        <rect x="12" y="9" width="2" height="2" fill="#d4a017"/>
-        <rect x="13" y="7" width="1" height="1" fill="#f0c040"/>
-        <rect x="11" y="11" width="1" height="1" fill="#f0c040"/>
-        <rect x="14" y="10" width="1" height="1" fill="#d4a017"/>
+        <rect x="14" y="13" width="2" height="2" fill="#f0c040"/>
+        <rect x="17" y="12" width="1" height="1" fill="#d4a017"/>
+        <rect x="13" y="15" width="1" height="1" fill="#f0c040"/>
+        <rect x="18" y="14" width="1" height="1" fill="#ffdd60"/>
+        <rect x="15" y="11" width="1" height="1" fill="#d4a017"/>
       </g>
-      <!-- Rock pixels -->
-      <rect x="12" y="11" width="3" height="2" fill="#5a5048"/>
-      <rect x="11" y="13" width="4" height="2" fill="#3d3530"/>
+      <!-- Rock chips flying -->
+      <g class="rock-chip">
+        <rect x="19" y="13" width="1" height="1" fill="#5a5048"/>
+        <rect x="21" y="11" width="1" height="1" fill="#4a4038"/>
+      </g>
     </svg>
   </div>
-  <div class="info" id="conn-msg" style="margin-top:8px;">Создаём комнату...</div>
+  <div class="info" id="conn-msg" style="margin-top:4px;font-size:14px;">Подключаемся...</div>
 </div>
 
 <!-- LOBBY -->
@@ -933,12 +971,42 @@ async function discSel() {
 async function sendPlay(extra) {
   const ci = selCard;
   selCard = -1; selRot = false;
-  const s = await gistRead(gistId);
-  if (!s) return;
-  s.acts = s.acts || [];
-  s.acts.push({ type: 'play', id: myId, ci, ...extra, _aid: myId + '_' + Date.now() });
-  await gistWrite(gistId, s);
-  renderHand();
+
+  // Optimistic: apply locally right away
+  const hand = GS.hands[myId] || [];
+  if (extra.discard && ci < hand.length) {
+    hand.splice(ci, 1);
+    GS.hands[myId] = hand;
+  } else if (!extra.discard && ci < hand.length) {
+    const card = hand[ci];
+    if (card && !card.sub && extra.col !== undefined) {
+      const paths = extra.rot ? rotP(card.p) : card.p;
+      GS.board[extra.col + '_' + extra.row] = { t: 'tun', p: paths };
+      hand.splice(ci, 1);
+      GS.hands[myId] = hand;
+    } else if (card && (card.sub === 'sab' || card.sub === 'rep') && extra.tgt) {
+      hand.splice(ci, 1);
+      GS.hands[myId] = hand;
+    } else if (card && card.sub === 'rock' && extra.rk) {
+      delete GS.board[extra.rk];
+      hand.splice(ci, 1);
+      GS.hands[myId] = hand;
+    } else if (card && card.sub === 'peek') {
+      hand.splice(ci, 1);
+      GS.hands[myId] = hand;
+    }
+  }
+  GS.currentTurn = (GS.currentTurn + 1) % GS.players.length;
+  renderGame();
+
+  // Background: push action to gist (no await on read, fire-and-forget style)
+  try {
+    const s = await gistRead(gistId);
+    if (!s) return;
+    s.acts = s.acts || [];
+    s.acts.push({ type: 'play', id: myId, ci, ...extra, _aid: myId + '_' + Date.now() });
+    await gistWrite(gistId, s);
+  } catch(e) {}
 }
 
 function showTgt(card) {
@@ -1071,6 +1139,18 @@ window.addEventListener('DOMContentLoaded', () => {
   if (saved) { window.GH_TOKEN_VAL = saved; }
   else { SS('s-token'); }
 });
+
+
+// Prevent zoom gestures
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gestureend', e => e.preventDefault());
+let lastTap = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTap < 300) e.preventDefault();
+  lastTap = now;
+}, { passive: false });
 
 </script>
 </body>
