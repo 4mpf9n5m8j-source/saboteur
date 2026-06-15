@@ -219,12 +219,12 @@ const GH_API = 'https://api.github.com';
 // Code = first 4 chars of gist ID
 // ══════════════════════════════════════════
 
-async function gistCreate(data) {
+async function gistCreate(data, code) {
   const r = await fetch(`${GH_API}/gists`, {
     method: 'POST',
     headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      description: 'Saboteur game room',
+      description: 'SABOTEUR-' + code,
       public: false,
       files: { 'state.json': { content: JSON.stringify(data) } }
     })
@@ -332,11 +332,14 @@ async function createRoom() {
     acts: [], _peek: {}, _ready: 0
   };
 
+  // Generate 4-char code
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  roomCode = Array.from({length:4}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+
   try {
-    const res = await gistCreate(initState);
+    const res = await gistCreate(initState, roomCode);
     if (!res.id) { toast('Ошибка создания'); SS('s-host'); return; }
     gistId = res.id;
-    roomCode = gistId.substring(0, 4).toUpperCase();
     codeToGist[roomCode] = gistId;
     GS = initState;
     myPIdx = 0;
@@ -365,12 +368,12 @@ async function joinRoom() {
 
   // Search gists for matching code
   try {
-    const r = await fetch(`${GH_API}/gists`, {
+    const r = await fetch(`${GH_API}/gists?per_page=30`, {
       headers: { 'Authorization': `token ${getToken()}` }
     });
     const gists = await r.json();
-    const found = gists.find(g => g.id.substring(0, 4).toUpperCase() === code && g.description === 'Saboteur game room');
-    if (!found) { toast('Комната не найдена'); SS('s-join'); return; }
+    const found = gists.find(g => g.description === 'SABOTEUR-' + code);
+    if (!found) { toast('Комната не найдена. Проверь код.'); SS('s-join'); return; }
 
     gistId = found.id;
     roomCode = code;
