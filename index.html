@@ -65,8 +65,12 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 .srow{display:flex;justify-content:space-between;padding:10px 14px;background:var(--stone-mid);border-radius:6px;font-size:15px;margin-bottom:6px;}
 .srow.win{border:2px solid var(--gold);}
 .grow{display:flex;justify-content:space-between;padding:8px 12px;background:var(--stone);border-radius:6px;font-size:14px;margin-bottom:6px;}
-.spinner{width:36px;height:36px;border:3px solid var(--stone-light);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite;}
-@keyframes sp{to{transform:rotate(360deg)}}
+.pickaxe-wrap{display:flex;flex-direction:column;align-items:center;gap:0;}
+.pickaxe-canvas{image-rendering:pixelated;}
+@keyframes pickSwing{0%{transform:rotate(-30deg)}40%{transform:rotate(20deg)}50%{transform:rotate(20deg)}90%{transform:rotate(-30deg)}100%{transform:rotate(-30deg)}}
+@keyframes goldFlash{0%,60%{opacity:0}65%,75%{opacity:1}80%,100%{opacity:0}}
+.pick-anim{animation:pickSwing .7s ease-in-out infinite;transform-origin:80% 20%;}
+.gold-spark{animation:goldFlash .7s ease-in-out infinite;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--stone-mid);border:1px solid var(--stone-light);border-radius:8px;padding:10px 20px;font-size:14px;z-index:200;white-space:nowrap;animation:fio 2.5s forwards;pointer-events:none;}
 @keyframes fio{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%)}75%{opacity:1}100%{opacity:0}}
 </style>
@@ -119,8 +123,35 @@ input[type=text]:focus{outline:none;border-color:var(--gold);}
 
 <!-- CONNECTING -->
 <div id="s-conn" class="screen center">
-  <div class="spinner"></div>
-  <div class="info" id="conn-msg">Создаём комнату...</div>
+  <div class="pickaxe-wrap">
+    <svg width="80" height="80" viewBox="0 0 16 16" style="image-rendering:pixelated;" xmlns="http://www.w3.org/2000/svg">
+      <g class="pick-anim">
+        <!-- Pickaxe head -->
+        <rect x="1" y="2" width="2" height="2" fill="#c0c0c0"/>
+        <rect x="3" y="1" width="2" height="2" fill="#c0c0c0"/>
+        <rect x="5" y="2" width="2" height="2" fill="#c0c0c0"/>
+        <rect x="3" y="3" width="2" height="2" fill="#a0a0a0"/>
+        <!-- Handle -->
+        <rect x="5" y="4" width="2" height="2" fill="#8B4513"/>
+        <rect x="7" y="6" width="2" height="2" fill="#8B4513"/>
+        <rect x="9" y="8" width="2" height="2" fill="#8B4513"/>
+        <rect x="11" y="10" width="2" height="2" fill="#6B3410"/>
+        <!-- Shine on head -->
+        <rect x="2" y="2" width="1" height="1" fill="#e8e8e8"/>
+      </g>
+      <!-- Gold pixels that flash on impact -->
+      <g class="gold-spark">
+        <rect x="12" y="9" width="2" height="2" fill="#d4a017"/>
+        <rect x="13" y="7" width="1" height="1" fill="#f0c040"/>
+        <rect x="11" y="11" width="1" height="1" fill="#f0c040"/>
+        <rect x="14" y="10" width="1" height="1" fill="#d4a017"/>
+      </g>
+      <!-- Rock pixels -->
+      <rect x="12" y="11" width="3" height="2" fill="#5a5048"/>
+      <rect x="11" y="13" width="4" height="2" fill="#3d3530"/>
+    </svg>
+  </div>
+  <div class="info" id="conn-msg" style="margin-top:8px;">Создаём комнату...</div>
 </div>
 
 <!-- LOBBY -->
@@ -379,44 +410,47 @@ async function joinRoom() {
     gistId = found.id;
     roomCode = code;
 
-    // Push join action
-    const state = await gistRead(gistId);
-    if (!state) { toast('Ошибка чтения'); SS('s-join'); return; }
-    state.acts = state.acts || [];
-    state.acts.push({ type: 'join', id: myId, name: myName, _aid: myId + Date.now() });
-    await gistWrite(gistId, state);
-
-    // Wait to be added by host
+    // Client adds itself directly to players (no action queue for join)
+    let joined = false;
     let tries = 0;
-    const msgs = ['Ищем комнату...','Подключаемся...','Ждём хоста...','Почти готово...','Ещё секунду...'];
-    const check = setInterval(async () => {
+    const msgs = ['Подключаемся...','Входим в комнату...','Почти...','Ещё секунду...'];
+    document.getElementById('conn-msg').textContent = 'Подключаемся...';
+    
+    const doJoin = async () => {
       tries++;
-      document.getElementById('conn-msg').textContent = msgs[Math.min(tries-1, msgs.length-1)] + ' (' + tries + ')';
-      if (tries > 30) { clearInterval(check); toast('Не удалось войти — попробуй ещё раз'); SS('s-join'); return; }
+      document.getElementById('conn-msg').textContent = msgs[Math.min(tries-1,msgs.length-1)] + ' (' + tries + ')';
+      if (tries > 20) { toast('Не удалось — попробуй ещё раз'); SS('s-join'); return; }
+      
       const s = await gistRead(gistId);
-      if (!s) return;
-      // Check if we're in the players list
+      if (!s) { setTimeout(doJoin, 1000); return; }
+      
+      // Already in?
       if (s.players && s.players.find(p => p.id === myId)) {
-        clearInterval(check);
         GS = s; lastV = s._v;
         myPIdx = GS.players.findIndex(p => p.id === myId);
         document.getElementById('l-code').textContent = roomCode;
-        SS('s-lobby');
-        updateLobbyUI();
-        startPoll();
-        return;
+        SS('s-lobby'); updateLobbyUI(); startPoll(); return;
       }
-      // Re-push join action every 5 tries in case it got lost
-      if (tries % 5 === 0) {
-        s.acts = s.acts || [];
-        // Only push if not already pending
-        const alreadyPending = s.acts.find(a => a.id === myId && a.type === 'join');
-        if (!alreadyPending) {
-          s.acts.push({ type: 'join', id: myId, name: myName, _aid: myId + Date.now() });
-          await gistWrite(gistId, s);
+      
+      // Add self to players and write
+      s.players = s.players || [];
+      s.players.push({ id: myId, name: myName, role: null, gold: 0, broken: [] });
+      s._v = (s._v || 1) + 1;
+      const ok = await gistWrite(gistId, s);
+      if (ok) {
+        // Verify write succeeded
+        const verify = await gistRead(gistId);
+        if (verify && verify.players && verify.players.find(p => p.id === myId)) {
+          GS = verify; lastV = verify._v;
+          myPIdx = GS.players.findIndex(p => p.id === myId);
+          document.getElementById('l-code').textContent = roomCode;
+          SS('s-lobby'); updateLobbyUI(); startPoll(); return;
         }
       }
-    }, 1000);
+      // Write failed or got overwritten, retry
+      setTimeout(doJoin, 1500);
+    };
+    doJoin();
   } catch(e) {
     toast('Ошибка: ' + e.message); SS('s-join');
   }
@@ -457,12 +491,7 @@ async function processHostActs(s) {
 
   for (const act of newActs) {
     processedActs.add(act._aid);
-    if (act.type === 'join' && GS.phase === 'lobby') {
-      if (!GS.players.find(p => p.id === act.id)) {
-        GS.players.push({ id: act.id, name: act.name, role: null, gold: 0, broken: [] });
-        changed = true;
-      }
-    } else if (act.type === 'play') {
+    if (act.type === 'play') {
       const pidx = GS.players.findIndex(p => p.id === act.id);
       if (pidx === GS.currentTurn) {
         changed = doPlay(act) || changed;
