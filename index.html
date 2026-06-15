@@ -386,13 +386,17 @@ async function joinRoom() {
     state.acts.push({ type: 'join', id: myId, name: myName, _aid: myId + Date.now() });
     await gistWrite(gistId, state);
 
-    // Wait to be added
+    // Wait to be added by host
     let tries = 0;
+    const msgs = ['Ищем комнату...','Подключаемся...','Ждём хоста...','Почти готово...','Ещё секунду...'];
     const check = setInterval(async () => {
       tries++;
-      if (tries > 15) { clearInterval(check); toast('Не удалось войти'); SS('s-join'); return; }
+      document.getElementById('conn-msg').textContent = msgs[Math.min(tries-1, msgs.length-1)] + ' (' + tries + ')';
+      if (tries > 30) { clearInterval(check); toast('Не удалось войти — попробуй ещё раз'); SS('s-join'); return; }
       const s = await gistRead(gistId);
-      if (s && s.players && s.players.find(p => p.id === myId)) {
+      if (!s) return;
+      // Check if we're in the players list
+      if (s.players && s.players.find(p => p.id === myId)) {
         clearInterval(check);
         GS = s; lastV = s._v;
         myPIdx = GS.players.findIndex(p => p.id === myId);
@@ -400,8 +404,19 @@ async function joinRoom() {
         SS('s-lobby');
         updateLobbyUI();
         startPoll();
+        return;
       }
-    }, 1500);
+      // Re-push join action every 5 tries in case it got lost
+      if (tries % 5 === 0) {
+        s.acts = s.acts || [];
+        // Only push if not already pending
+        const alreadyPending = s.acts.find(a => a.id === myId && a.type === 'join');
+        if (!alreadyPending) {
+          s.acts.push({ type: 'join', id: myId, name: myName, _aid: myId + Date.now() });
+          await gistWrite(gistId, s);
+        }
+      }
+    }, 1000);
   } catch(e) {
     toast('Ошибка: ' + e.message); SS('s-join');
   }
@@ -462,6 +477,10 @@ async function processHostActs(s) {
     GS._v = (GS._v || 1) + 1;
     myPIdx = 0;
     await gistWrite(gistId, GS);
+    applyState();
+  } else {
+    // Even without changes, keep local state in sync
+    myPIdx = 0;
     applyState();
   }
 }
@@ -624,11 +643,12 @@ function applyState() {
   myPIdx = GS.players.findIndex(p => p.id === myId);
   if (myPIdx < 0) myPIdx = 0;
 
-  if (GS.phase === 'lobby') { SS('s-lobby'); updateLobbyUI(); }
-  else if (GS.phase === 'role') { SS('s-role'); showRole(); }
-  else if (GS.phase === 'game') { SS('sg'); renderGame(); }
-  else if (GS.phase === 'roundend') { SS('sg'); renderGame(); showRoundEnd(); }
-  else if (GS.phase === 'end') { SS('s-end'); renderEnd(); }
+  const cur = document.querySelector('.screen.active')?.id;
+  if (GS.phase === 'lobby') { if (cur !== 's-lobby') SS('s-lobby'); updateLobbyUI(); }
+  else if (GS.phase === 'role') { if (cur !== 's-role') { SS('s-role'); showRole(); } }
+  else if (GS.phase === 'game') { if (cur !== 'sg') { SS('sg'); boardScrolled = false; } renderGame(); }
+  else if (GS.phase === 'roundend') { if (cur !== 'sg') SS('sg'); renderGame(); showRoundEnd(); }
+  else if (GS.phase === 'end') { if (cur !== 's-end') SS('s-end'); renderEnd(); }
 
   // Peek result
   if (GS._peek && GS._peek[myId]) {
